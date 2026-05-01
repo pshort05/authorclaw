@@ -274,4 +274,89 @@ export class ResearchLookupService {
       return url.substring(0, 80);
     }
   }
+
+  // ── Marketing-research presets ──
+  // Structured queries authors actually run when researching where to
+  // pitch / submit / promote. Each preset builds a tightly-scoped query
+  // for the underlying lookup() and adds the safety rules (no fake
+  // contact info, prefer recent sources, no fabricated agent names).
+
+  /**
+   * Research literary agents repping a specific genre/subgenre.
+   * Returns sourced agent names + agency + recent-sale signals + a path
+   * to find their submission process. Never generates emails or DMs.
+   */
+  async findAgents(input: { genre: string; subgenre?: string; titleAgePositioning?: string }): Promise<ResearchResult> {
+    const subgenre = input.subgenre ? ` (specifically ${input.subgenre})` : '';
+    const positioning = input.titleAgePositioning ? ` for ${input.titleAgePositioning}` : '';
+    const query =
+      `Find currently-active literary agents who represent ${input.genre}${subgenre}${positioning}. ` +
+      `For each agent include: agent name, agency, 1-2 recent sales (within the last 18 months ideally), ` +
+      `whether their submission status is currently OPEN or CLOSED, and the URL of their official ` +
+      `submission/MSWL page. Do NOT fabricate names or sales — only include agents you can verify ` +
+      `via recent published sources (PublishersMarketplace, Manuscript Wishlist, agency websites, ` +
+      `Twitter/X #MSWL feed, AAR member directory). Skip any agent who has been inactive or whose ` +
+      `last verified sale is more than 24 months old.`;
+    return this.lookup(query, { maxWords: 600 });
+  }
+
+  /**
+   * Research podcasts that interview authors in a genre.
+   */
+  async findAuthorPodcasts(input: { genre: string; subgenre?: string }): Promise<ResearchResult> {
+    const subgenre = input.subgenre ? ` / ${input.subgenre}` : '';
+    const query =
+      `Find currently-active podcasts that regularly interview authors in the ${input.genre}${subgenre} ` +
+      `space. For each podcast include: podcast name, host(s), episode cadence, 2-3 recent author ` +
+      `guests (last 6 months ideally), how to pitch (their published submission/contact page URL), and ` +
+      `the platform (Spotify, Apple, YouTube, etc.). Skip podcasts that haven't released a new episode ` +
+      `in over 4 months. Do NOT fabricate hosts or guests.`;
+    return this.lookup(query, { maxWords: 600 });
+  }
+
+  /**
+   * Research book bloggers / reviewers active in a genre.
+   */
+  async findReviewers(input: { genre: string; subgenre?: string; indieFriendly?: boolean }): Promise<ResearchResult> {
+    const subgenre = input.subgenre ? ` (${input.subgenre})` : '';
+    const indieNote = input.indieFriendly
+      ? ` Prioritize bloggers who explicitly review self-published / small-press / indie titles. Exclude bloggers who ONLY review Big-5 books.`
+      : '';
+    const query =
+      `Find currently-active book bloggers / reviewers / Bookstagram / BookTok accounts covering ${input.genre}${subgenre}. ` +
+      `For each reviewer include: name/handle, platform (Goodreads, Instagram, TikTok, blog), follower or audience scale, ` +
+      `recent featured books (last 3 months), and their submission process (their published policy page URL). ` +
+      `Skip dormant accounts (no posts in 60+ days).${indieNote} Do NOT fabricate names or follower counts.`;
+    return this.lookup(query, { maxWords: 700 });
+  }
+
+  /**
+   * Research newsletters that feature books in a genre.
+   */
+  async findNewsletters(input: { genre: string; subgenre?: string }): Promise<ResearchResult> {
+    const subgenre = input.subgenre ? ` (${input.subgenre})` : '';
+    const query =
+      `Find currently-active email newsletters that feature ${input.genre}${subgenre} releases or interviews. ` +
+      `Include both paid promotion newsletters (BookBub, Freebooksy, BargainBooksy, Robin Reads, Book Cave, etc.) ` +
+      `AND editorial newsletters (substacks, indie review newsletters). For each newsletter include: name, ` +
+      `audience scale if disclosed, paid vs editorial, ad/feature pricing if listed, submission/booking URL, ` +
+      `and a recent feature example. Skip newsletters that haven't published in 60+ days.`;
+    return this.lookup(query, { maxWords: 700 });
+  }
+
+  /**
+   * Research recent comparable authors selling well in the genre/subgenre.
+   * Useful for query letters + cover positioning.
+   */
+  async findCompAuthors(input: { genre: string; subgenre?: string; tone?: string }): Promise<ResearchResult> {
+    const subgenre = input.subgenre ? ` / ${input.subgenre}` : '';
+    const tone = input.tone ? ` with a ${input.tone} tone` : '';
+    const query =
+      `Identify recent (last 24 months) comparable authors selling well in ${input.genre}${subgenre}${tone}. ` +
+      `For each comp author include: name, most-recent successful title, why they're a useful comp ` +
+      `(specific overlapping element — voice, structure, audience), and 1-2 promotional channels they ` +
+      `clearly used (BookTok, BookBub Featured Deal, podcast tour, Bookstagram bookblogs, etc.). ` +
+      `Skip authors over 24 months out from a release. Do NOT fabricate sales numbers or rankings.`;
+    return this.lookup(query, { maxWords: 700 });
+  }
 }
