@@ -9,6 +9,7 @@
   },
   "ai": {
     "preferredProvider": null,
+    "preferredImageProvider": null,
     "maxHistoryMessages": 20,
     "defaultTemperature": 0.7,
     "ollama": {

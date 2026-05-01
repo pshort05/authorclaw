@@ -978,6 +978,21 @@ textarea { resize: vertical; min-height: 60px; }
         <button class="success" id="btnSaveGlobalProvider">Save Provider</button>
       </div>
 
+      <!-- Default Image Provider -->
+      <div class="card">
+        <div class="card-title">Default Image Provider</div>
+        <p class="hint" style="margin-bottom:12px;">Which image AI to use when generating book covers. Per-call <code>provider:</code> still overrides this.</p>
+        <div class="form-group">
+          <select id="globalImageProviderSelect">
+            <option value="">Auto — OpenAI → Gemini → Flux (recommended)</option>
+            <option value="openai">OpenAI gpt-image-1 (best text rendering, paid)</option>
+            <option value="gemini">Gemini Nano Banana (good text, free tier)</option>
+            <option value="together">Together AI Flux (free, weaker text)</option>
+          </select>
+        </div>
+        <button class="success" id="btnSaveGlobalImageProvider">Save Image Provider</button>
+      </div>
+
       <!-- Telegram -->
       <div class="card">
         <div class="card-title">Telegram Integration</div>
@@ -1258,6 +1273,7 @@ function switchPanel(name) {
     loadOllamaConfig();
     loadOpenrouterConfig();
     loadGlobalProvider();
+    loadGlobalImageProvider();
     loadResearchDomains();
     loadAutonomousStatus();
     loadTelegramStatus();
@@ -2854,6 +2870,20 @@ document.getElementById('btnSaveGlobalProvider').addEventListener('click', funct
   var val = document.getElementById('globalProviderSelect').value;
   api('POST', '/api/config/update', { path: 'ai.preferredProvider', value: val || null }).then(function() {
     showToast(val ? 'Default provider set to ' + val : 'Provider set to auto (tiered routing)', 'success');
+  }).catch(function(e) { showToast('Failed: ' + e.message, 'error'); });
+});
+
+// ── Global IMAGE Provider Preference ──
+function loadGlobalImageProvider() {
+  api('GET', '/api/config').then(function(data) {
+    var sel = document.getElementById('globalImageProviderSelect');
+    if (sel && data.ai) sel.value = data.ai.preferredImageProvider || '';
+  });
+}
+document.getElementById('btnSaveGlobalImageProvider').addEventListener('click', function() {
+  var val = document.getElementById('globalImageProviderSelect').value;
+  api('POST', '/api/config/update', { path: 'ai.preferredImageProvider', value: val || null }).then(function() {
+    showToast(val ? 'Default image provider set to ' + val : 'Image provider set to auto (OpenAI → Gemini → Flux)', 'success');
   }).catch(function(e) { showToast('Failed: ' + e.message, 'error'); });
 });
 

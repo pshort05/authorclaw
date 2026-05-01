@@ -395,7 +395,7 @@ export function createAPIRoutes(app: Application, gateway: any, rootDir?: string
       'heartbeat.enableReminders', 'heartbeat.quietHoursStart',
       'heartbeat.quietHoursEnd', 'heartbeat.autonomousEnabled',
       'heartbeat.autonomousIntervalMinutes', 'heartbeat.maxAutonomousStepsPerWake',
-      'ai.defaultTemperature', 'ai.preferredProvider',
+      'ai.defaultTemperature', 'ai.preferredProvider', 'ai.preferredImageProvider',
       'ai.ollama.enabled', 'ai.ollama.endpoint', 'ai.ollama.model',
       'ai.openrouter.model',
       'bridges.telegram.enabled', 'bridges.telegram.pairingEnabled',
@@ -2900,6 +2900,11 @@ ${sourceCode.substring(0, 15000)}
       return res.status(400).json({ error: 'description is required' });
     }
 
+    // Resolve image provider preference: per-call override > global setting > 'auto'
+    const resolvedProvider = provider
+      || services.config?.get('ai.preferredImageProvider')
+      || 'auto';
+
     try {
       const result = await imageGen.generateBookCover({
         title: title || 'Untitled',
@@ -2908,7 +2913,7 @@ ${sourceCode.substring(0, 15000)}
         description,
         style,
         subgenre, mood, era, setting, keyImagery, palette, avoidImagery,
-        includeText, typographyNote, quality, provider,
+        includeText, typographyNote, quality, provider: resolvedProvider,
       });
       res.json(result);
     } catch (err) {
@@ -2950,7 +2955,7 @@ ${sourceCode.substring(0, 15000)}
         typographyNote: req.body.typographyNote,
         variants: req.body.variants,
         quality: req.body.quality,
-        provider: req.body.provider,
+        provider: req.body.provider || services.config?.get('ai.preferredImageProvider') || 'auto',
       });
       res.json(result);
     } catch (err) {
