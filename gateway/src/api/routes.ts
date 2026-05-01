@@ -2894,7 +2894,8 @@ ${sourceCode.substring(0, 15000)}
     if (!imageGen) return res.status(503).json({ error: 'Image generation service not initialized' });
 
     const { title, author, genre, description, style,
-      subgenre, mood, era, setting, keyImagery, palette, avoidImagery } = req.body;
+      subgenre, mood, era, setting, keyImagery, palette, avoidImagery,
+      includeText, typographyNote, quality, provider } = req.body;
     if (!description) {
       return res.status(400).json({ error: 'description is required' });
     }
@@ -2907,6 +2908,7 @@ ${sourceCode.substring(0, 15000)}
         description,
         style,
         subgenre, mood, era, setting, keyImagery, palette, avoidImagery,
+        includeText, typographyNote, quality, provider,
       });
       res.json(result);
     } catch (err) {
@@ -2944,6 +2946,8 @@ ${sourceCode.substring(0, 15000)}
         keyImagery: req.body.keyImagery,
         palette: req.body.palette,
         avoidImagery: req.body.avoidImagery,
+        includeText: req.body.includeText,
+        typographyNote: req.body.typographyNote,
         variants: req.body.variants,
         quality: req.body.quality,
         provider: req.body.provider,

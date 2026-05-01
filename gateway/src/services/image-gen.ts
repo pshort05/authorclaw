@@ -177,12 +177,19 @@ export class ImageGenService {
     keyImagery?: string[];          // e.g., ["a burning compass", "raven feathers"]
     palette?: string;               // e.g., "deep blue and gold" / "blood red on black"
     avoidImagery?: string;          // e.g., "no faces, no weapons"
+    /** Render title + author on the cover (default true). */
+    includeText?: boolean;
+    typographyNote?: string;
+    quality?: 'low' | 'medium' | 'high' | 'auto';
+    provider?: 'together' | 'openai' | 'auto';
   }): Promise<ImageResult> {
     const coverPrompt = this.buildCoverPrompt(params);
     return this.generate(coverPrompt, {
       style: params.style || 'illustrated',
       width: 1024,
       height: 1536,
+      quality: params.quality || 'high',
+      provider: params.provider,
     });
   }
 
@@ -217,6 +224,9 @@ export class ImageGenService {
     keyImagery?: string[];
     palette?: string;
     avoidImagery?: string;
+    /** Render title + author on the cover (default true). */
+    includeText?: boolean;
+    typographyNote?: string;
     /** Limit to a subset of variants. Default: all four. */
     variants?: CoverVariant[];
     quality?: 'low' | 'medium' | 'high' | 'auto';
@@ -239,18 +249,28 @@ export class ImageGenService {
                       : params.quality === 'medium' ? 0.5
                       : 1.0;
 
+    const includeText = params.includeText !== false;
+
     for (const variant of targets) {
       const spec = COVER_VARIANTS[variant];
       if (!spec) continue;
 
       // Each variant gets the same brief but a small composition hint so
-      // the model lays out for the target aspect.
-      const variantHint =
-        variant === 'audiobook'
-          ? ' Square 1:1 composition: focal element centered, balanced both vertically and horizontally; works as a thumbnail.'
-        : variant === 'social'
-          ? ' Wide 3:2 landscape composition: scene reads left-to-right; leave room for overlay text on one side.'
-        : ' Vertical 2:3 portrait composition: classic book-cover layout, focal element centered, room at top for title and bottom for author name. NO TEXT in the image — title/author are overlaid in post.';
+      // the model lays out for the target aspect. Audiobook + social
+      // variants explicitly skip on-image text (audiobook needs a thumb-
+      // safe centered focal element; social needs space for an overlay).
+      // Ebook + print honor the includeText flag.
+      let variantHint: string;
+      if (variant === 'audiobook') {
+        variantHint = ' Square 1:1 composition: focal element centered, balanced both vertically and horizontally; works as a thumbnail. NO TEXT IN THE IMAGE — audiobook covers are usually re-typeset by the platform; keep the canvas clean for that.';
+      } else if (variant === 'social') {
+        variantHint = ' Wide 3:2 landscape composition: scene reads left-to-right; leave room for overlay text on one side. NO TEXT IN THE IMAGE — social banners get text overlays in your designer.';
+      } else {
+        // ebook + print
+        variantHint = includeText
+          ? ` Vertical 2:3 portrait composition: classic book-cover layout. Render the title "${params.title}" prominently in the upper area and the author name "${params.author}" smaller near the bottom. Letterforms must be sharp and free of artifacts.`
+          : ` Vertical 2:3 portrait composition: classic book-cover layout, focal element centered, room at top for title and bottom for author name. NO TEXT in the image — title/author are overlaid in post.`;
+      }
 
       const prompt = promptBase + variantHint;
 
@@ -450,6 +470,11 @@ export class ImageGenService {
    * (subgenre, mood, era, setting, keyImagery, palette, avoidImagery) are
    * all woven into the brief when provided. When they're omitted, we fall
    * back to the generic genre style — still works, just less specific.
+   *
+   * Text rendering is ON by default — gpt-image-1 renders book-cover text
+   * (title + author name) reliably and authors generally want a finished
+   * cover, not a base image they have to typeset. Pass `includeText: false`
+   * to get a clean image you can drop into your own designer.
    */
   private buildCoverPrompt(params: {
     title: string;
@@ -463,6 +488,11 @@ export class ImageGenService {
     keyImagery?: string[];
     palette?: string;
     avoidImagery?: string;
+    /** When true (default), the prompt asks the model to render title +
+     *  author. When false, asks for a clean image with no text. */
+    includeText?: boolean;
+    /** Optional: override the typography direction. */
+    typographyNote?: string;
   }): string {
     const genreStyles: Record<string, string> = {
       'romance': 'warm tones, intimate atmosphere, elegant, soft lighting, couple silhouette or embrace',
@@ -495,9 +525,28 @@ export class ImageGenService {
     }
     parts.push(`Story essence (do not depict literally — capture the feeling): ${params.description.slice(0, 300)}.`);
     if (params.avoidImagery) parts.push(`Do NOT include: ${params.avoidImagery}.`);
-    parts.push(`Composition: leave clear space at the top for title typography and at the bottom for the author name.`);
+
+    // Default = include title + author typography on the cover. Authors who
+    // want a clean base image to drop into their own designer pass
+    // includeText: false.
+    const includeText = params.includeText !== false;
+    if (includeText) {
+      const typoNote = params.typographyNote || `Typography style should match the ${params.genre} genre conventions`;
+      parts.push(
+        `RENDER TEXT ON THE COVER:`,
+        `- Title: "${params.title}" — display prominently (top half is typical)`,
+        `- Author name: "${params.author}" — smaller, near the bottom`,
+        `- ${typoNote}.`,
+        `- Letterforms must be sharp, legible, and free of artifacts.`,
+        `- No misspellings, no extra words, no random characters.`,
+      );
+    } else {
+      parts.push(
+        `Composition: leave clear space at the top for title typography and at the bottom for the author name.`,
+        `CRITICAL: NO TEXT in the image — title and author name will be added separately in post.`,
+      );
+    }
     parts.push(`Output: high-quality commercial book cover, suitable for Amazon KDP and other retailers.`);
-    parts.push(`CRITICAL: NO TEXT in the image — title and author name are added separately in post.`);
 
     return parts.join(' ');
   }

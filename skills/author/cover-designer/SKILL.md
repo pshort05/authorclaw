@@ -76,15 +76,31 @@ The AI will gather the brief from your project metadata, ask clarifying
 questions for any missing rich fields, then call `/api/projects/:id/cover-set`
 and surface the generated images in the dashboard's Library panel.
 
-## Important rules
+## Title + author rendering
 
-- **NO TEXT** in the AI-generated images. Title and author are added in
-  your cover designer (Canva, Photoshop, KDP Cover Creator, BookBrush, etc.)
-  in post.
-- Text-on-image at generation time produces unreliable letterforms — every
-  pro author tool keeps the image and the typography separate.
+**Text is rendered ON the cover by default.** gpt-image-1 produces sharp,
+genre-appropriate typography for book covers, so authors usually want a
+finished cover they can list with — not a base image they have to typeset.
+
+For ebook + print variants the title appears prominently (top half) and
+the author name smaller near the bottom. Audiobook squares and social
+banners are still rendered without on-image text because those formats
+are typically re-typeset by the platform / overlay tool.
+
+Override defaults:
+- `includeText: false` → clean image, no on-cover text. Use this when you
+  want to drop the image into your own designer (Canva, Photoshop, KDP
+  Cover Creator, BookBrush, etc.) and add typography yourself.
+- `typographyNote: "..."` → steer typography style. e.g.,
+  `"hand-lettered serif, gold foil effect"` or `"bold sans-serif, all caps"`.
+
+## Other important rules
+
 - The AI brief is a *feeling*, not a literal scene. Saying "the sphere is
   glowing on the altar" works better than "exact angle showing the sphere".
+- Even with text rendering on, double-check letterforms — sometimes the
+  model produces near-misses. If a letter looks off, regenerate or set
+  `includeText: false` and typeset in post.
 
 ## Where to expand
 
