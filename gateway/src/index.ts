@@ -46,6 +46,8 @@ import { AutoSkillService } from './services/auto-skill.js';
 import { WritingJudgeService } from './services/writing-judge.js';
 import { ResearchLookupService } from './services/research-lookup.js';
 import { VideoResearchService } from './services/video-research.js';
+import { StoryStructureService } from './services/story-structures.js';
+import { PlotPromisesService } from './services/plot-promises.js';
 import { LessonStore } from './services/lessons.js';
 import { PreferenceStore } from './services/preferences.js';
 import { OrchestratorService } from './services/orchestrator.js';
@@ -121,6 +123,8 @@ class AuthorClawGateway {
   private writingJudge!: WritingJudgeService;
   private researchLookup!: ResearchLookupService;
   private videoResearch!: VideoResearchService;
+  private storyStructures!: StoryStructureService;
+  private plotPromises!: PlotPromisesService;
   private lessons!: LessonStore;
   private preferences!: PreferenceStore;
   private orchestrator!: OrchestratorService;
@@ -444,6 +448,15 @@ class AuthorClawGateway {
     } else {
       console.log('  ✓ Research lookup ready | Video research disabled (yt-dlp not installed — see /api/video/doctor)');
     }
+
+    // ── Phase 6g7: Story Structures (smart-recommend, not forced) ──
+    this.storyStructures = new StoryStructureService();
+    console.log(`  ✓ Story structures: ${this.storyStructures.list().length} structures available (Save the Cat, three-act, Hero's Journey, Romancing the Beat, Story Circle, Mystery, none)`);
+
+    // ── Phase 6g8: Plot Promises (Sanderson-style promises + payoffs) ──
+    this.plotPromises = new PlotPromisesService(join(ROOT_DIR, 'workspace'));
+    await this.plotPromises.initialize();
+    console.log(`  ✓ Plot promises: tracker ready`);
 
     // ── Wire project-completion hooks ──
     // When a project finishes, observe the event for the user model AND
@@ -1373,6 +1386,8 @@ class AuthorClawGateway {
       writingJudge: this.writingJudge,
       researchLookup: this.researchLookup,
       videoResearch: this.videoResearch,
+      storyStructures: this.storyStructures,
+      plotPromises: this.plotPromises,
       lessons: this.lessons,
       preferences: this.preferences,
       orchestrator: this.orchestrator,
