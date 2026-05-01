@@ -49,6 +49,9 @@ import { VideoResearchService } from './services/video-research.js';
 import { StoryStructureService } from './services/story-structures.js';
 import { PlotPromisesService } from './services/plot-promises.js';
 import { CharacterVoicesService } from './services/character-voices.js';
+import { WebsiteSiteService } from './services/website-sites.js';
+import { BlogPostDrafterService } from './services/blog-post-drafter.js';
+import { WebsiteDeployService } from './services/website-deploy.js';
 import { LessonStore } from './services/lessons.js';
 import { PreferenceStore } from './services/preferences.js';
 import { OrchestratorService } from './services/orchestrator.js';
@@ -127,6 +130,9 @@ class AuthorClawGateway {
   private storyStructures!: StoryStructureService;
   private plotPromises!: PlotPromisesService;
   private characterVoices!: CharacterVoicesService;
+  private websiteSites!: WebsiteSiteService;
+  private blogPostDrafter!: BlogPostDrafterService;
+  private websiteDeploy!: WebsiteDeployService;
   private lessons!: LessonStore;
   private preferences!: PreferenceStore;
   private orchestrator!: OrchestratorService;
@@ -465,6 +471,58 @@ class AuthorClawGateway {
     this.characterVoices.setStyleClone(this.styleClone);
     await this.characterVoices.initialize();
     console.log(`  ✓ Character voices: per-character voice drift tracker ready`);
+
+    // ── Phase 6h: Website management — auto-add-book, blog drafter, deploy ──
+    this.websiteSites = new WebsiteSiteService(join(ROOT_DIR, 'workspace'));
+    await this.websiteSites.initialize();
+    this.blogPostDrafter = new BlogPostDrafterService();
+    this.websiteDeploy = new WebsiteDeployService();
+    const sitesCount = this.websiteSites.list().length;
+    console.log(`  ✓ Website management: ${sitesCount} site${sitesCount === 1 ? '' : 's'} registered, blog drafter + deploy adapters ready`);
+
+    // Register the project-completion hook for auto-add-book.
+    // When a book-production project completes AND has linked sites, the
+    // book is auto-added to each site's books list (idempotent on slug).
+    // Author still has to render + deploy explicitly — auto-publishing
+    // would be too aggressive.
+    this.projectEngine.onProjectCompleted(async (project: any) => {
+      try {
+        const isBookProject = project.type === 'book-production' || project.type === 'novel-pipeline';
+        if (!isBookProject) return;
+        const linkedSites = this.websiteSites.findSitesForProject(project.id);
+        if (linkedSites.length === 0) return;
+
+        const persona = project.personaId ? this.personas.get?.(project.personaId) : null;
+        const authorName = persona?.penName || 'AuthorClaw';
+        const slug = String(project.title || 'untitled').toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+        const book: import('./services/website-builder.js').WebsiteBook = {
+          slug,
+          title: project.title,
+          subtitle: project.context?.subtitle,
+          blurb: this.escapeBasicHTML(String(project.description || '')),
+          releaseDate: new Date().toISOString().split('T')[0],
+          seriesName: project.context?.seriesName,
+          seriesNumber: project.context?.seriesNumber,
+          genre: project.context?.genre,
+          formats: ['ebook'],
+        };
+
+        for (const site of linkedSites) {
+          await this.websiteSites.autoAddBook(site.id, book);
+          this.activityLog.log({
+            type: 'file_saved',
+            source: 'internal',
+            goalId: project.id,
+            message: `Auto-added "${project.title}" to site "${site.config.siteName}". Render + deploy when ready.`,
+            metadata: { siteId: site.id, bookSlug: slug, authorName },
+          });
+        }
+      } catch (err) {
+        console.warn('  [website-sites] auto-add-book hook failed:', (err as Error)?.message || err);
+      }
+    });
 
     // ── Wire project-completion hooks ──
     // When a project finishes, observe the event for the user model AND
@@ -1207,6 +1265,13 @@ class AuthorClawGateway {
     }
   }
 
+  /** Escape HTML chars in a string. Used by the website-sites hook so we
+   *  don't pass user-supplied project descriptions raw into a book blurb. */
+  private escapeBasicHTML(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   private buildSystemPrompt(context: {
     soul: string;
     memories: string;
@@ -1397,6 +1462,9 @@ class AuthorClawGateway {
       storyStructures: this.storyStructures,
       plotPromises: this.plotPromises,
       characterVoices: this.characterVoices,
+      websiteSites: this.websiteSites,
+      blogPostDrafter: this.blogPostDrafter,
+      websiteDeploy: this.websiteDeploy,
       lessons: this.lessons,
       preferences: this.preferences,
       orchestrator: this.orchestrator,
