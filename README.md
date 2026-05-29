@@ -452,6 +452,7 @@ All supporting guides live in [`docs/`](docs/). Start with whichever matches wha
 
 ### 🛠 Operations
 - **[docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md)** — Start, stop, monitor, and manage AuthorClaw across local, Docker, and VPS deployments. Ports, environment variables, common API calls.
+- **[docs/TELEGRAM-SETUP.md](docs/TELEGRAM-SETUP.md)** ✨ *new* — End-to-end Telegram bot setup on Linux or macOS, with LAN access from other devices, firewall configuration, multi-user allowlists, and persistent service setup (systemd / launchd).
 - **[docs/SECURITY.md](docs/SECURITY.md)** — Vault, sandbox, audit log, network posture, deployment guidance for trusted LAN vs untrusted exposure.
 
 ### 🗺 Roadmap & planning
