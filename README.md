@@ -343,6 +343,16 @@ AuthorClaw security features:
 
 > **We strongly recommend running AuthorClaw inside a VM or VPS with Docker.** Your API keys, manuscripts, and creative work deserve real protection. Defense in depth means multiple security layers — not just application-level security.
 
+> **Fork posture — LAN-accessible by default.** This fork ships the Docker
+> image bound to `0.0.0.0` so the published port is reachable from other hosts
+> on the same LAN. The bind address is controlled by the `AUTHORCLAW_BIND`
+> env var (default `0.0.0.0`; set to `127.0.0.1` for loopback-only). This is
+> intentional and overrides the upstream localhost-only behavior. **The
+> service has no HTTP/WebSocket authentication.** Acceptable on a trusted
+> single-user home LAN; not acceptable for wider exposure. For untrusted
+> networks, front it with a reverse proxy (Caddy / Nginx / Traefik) that
+> enforces auth and TLS. See [SECURITY.md](SECURITY.md#3-security-posture-of-the-local-installation) for the full posture.
+
 ### Recommended: VPS + Docker + VPN (Best Security)
 
 This is the gold standard for always-on, secure operation:
@@ -400,20 +410,23 @@ cd authorclaw && npm install
 npx tsx gateway/src/index.ts
 ```
 
-AuthorClaw binds to `localhost:3847` only — not exposed to the internet. But your API keys and manuscripts live on your main OS with no isolation layer.
+By default this fork binds AuthorClaw to `0.0.0.0:3847` so the Docker image is reachable on the LAN. For a pure-local dev box, set `AUTHORCLAW_BIND=127.0.0.1` to restore loopback-only behavior. Either way, your API keys and manuscripts live on your main OS with no isolation layer.
 
 ### Security Layers Summary
 
-| Layer | Local | VM | VPS + Docker + VPN |
-|-------|-------|-----|-------------------|
-| App-level vault (AES-256) | ✅ | ✅ | ✅ |
-| Sandbox file access | ✅ | ✅ | ✅ |
-| Audit logging | ✅ | ✅ | ✅ |
-| OS isolation | ❌ | ✅ | ✅ |
-| Container isolation | ❌ | Optional | ✅ |
-| Network isolation (VPN) | ❌ | ❌ | ✅ |
-| Always-on (Telegram 24/7) | ❌ | ❌ | ✅ |
-| Disposable environment | ❌ | ✅ | ✅ |
+| Layer | Local | VM | LAN Docker | VPS + Docker + VPN |
+|-------|-------|-----|------------|--------------------|
+| App-level vault (AES-256) | ✅ | ✅ | ✅ | ✅ |
+| Sandbox file access | ✅ | ✅ | ✅ | ✅ |
+| Audit logging | ✅ | ✅ | ✅ | ✅ |
+| OS isolation | ❌ | ✅ | ✅ | ✅ |
+| Container isolation | ❌ | Optional | ✅ | ✅ |
+| Loopback-only network | Default | Default | ❌ (LAN-exposed) | ✅ (VPN-only) |
+| HTTP/WS authentication | ❌ | ❌ | ❌ — add reverse proxy | ❌ — add reverse proxy |
+| Always-on (Telegram 24/7) | ❌ | ❌ | ✅ | ✅ |
+| Disposable environment | ❌ | ✅ | ✅ | ✅ |
+
+The "LAN Docker" column is this fork's default. The service has no built-in HTTP/WebSocket auth — if you're exposing beyond a trusted LAN, front it with an authenticating reverse proxy.
 
 ---
 

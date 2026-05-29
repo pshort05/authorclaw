@@ -65,17 +65,35 @@ npm run docker:down
 npm start
 ```
 
-### Remote access (from your PC to VPS)
-AuthorClaw binds to `127.0.0.1` only — it's not exposed to the internet by default.
-Use an SSH tunnel to access it securely:
+### Network access
+
+This fork binds to `0.0.0.0:3847` by default — the Docker image is reachable
+from any host on the same LAN, no tunnel required. The bind address is
+controlled by the `AUTHORCLAW_BIND` env var.
+
+**Trusted LAN (preferred for home / lab Docker deployment):**
 ```bash
-# On your local PC — creates a secure tunnel
-ssh -L 3847:localhost:3847 user@your-vps-ip
+# Default — open browser on any LAN host:
+http://<docker-host-ip>:3847
 
-# Then open: http://localhost:3847 on your PC
+# Explicit (already the default in docker/docker-compose.yml):
+AUTHORCLAW_BIND=0.0.0.0 npm start
 ```
+There is no built-in HTTP/WebSocket authentication. Only do this on a
+trusted single-user LAN.
 
-Or set up a reverse proxy (Nginx/Caddy) with HTTPS + auth for public access.
+**Untrusted network / public VPS:** lock the bind to loopback and reach it
+through a tunnel or an authenticating reverse proxy.
+```bash
+# 1. Restrict the bind:
+AUTHORCLAW_BIND=127.0.0.1 npm start   # or set in docker-compose.yml
+
+# 2a. SSH tunnel from your PC:
+ssh -L 3847:localhost:3847 user@your-vps-ip
+# Then open http://localhost:3847 on your PC.
+
+# 2b. Or front it with Caddy / Nginx / Traefik enforcing HTTPS + auth.
+```
 
 ---
 

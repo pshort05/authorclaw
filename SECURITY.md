@@ -57,9 +57,21 @@ should be suspicious of any future version or fork that claims otherwise:
 
 ## 3. Security posture of the local installation
 
+> **Fork note — network exposure.** This fork is configured for LAN-accessible
+> Docker deployment, which is a deliberate departure from the upstream
+> "localhost-only" posture. The bind address is controlled by the
+> `AUTHORCLAW_BIND` env var and defaults to `0.0.0.0` (all interfaces). The
+> Docker image, Express CORS, Socket.IO CORS, and Helmet `connectSrc` are all
+> permissive (`*`) so the published port is reachable from other hosts on the
+> same LAN. **This is suitable only for a trusted single-user LAN.** AuthorClaw
+> has no HTTP/WebSocket authentication and no API-level rate limiting. If the
+> service is reachable from any untrusted network, front it with a reverse
+> proxy (Caddy / Nginx / Traefik) that enforces authentication and TLS — or
+> set `AUTHORCLAW_BIND=127.0.0.1` to restore the upstream loopback default.
+
 | Concern | Status |
 |---|---|
-| Network binding | `127.0.0.1` only. No remote access. |
+| Network binding | `AUTHORCLAW_BIND` env var (default `0.0.0.0`). Set to `127.0.0.1` for loopback-only. |
 | Credential storage | AES-256-GCM in `workspace/.vault/vault.enc`. Atomic writes. `chmod 0600` on POSIX. |
 | Master key | Auto-generated on first run, stored in `.env` (see note below). |
 | Path traversal | Validated via `SandboxGuard` + per-endpoint sanitization. |

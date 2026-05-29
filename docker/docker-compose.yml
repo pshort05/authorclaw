@@ -20,6 +20,9 @@ services:
     environment:
       - NODE_ENV=production
       - AUTHORCLAW_VAULT_KEY=${AUTHORCLAW_VAULT_KEY:-}
+      # Bind to all interfaces inside the container so the published port is
+      # reachable from the LAN. Set to 127.0.0.1 to restore localhost-only.
+      - AUTHORCLAW_BIND=${AUTHORCLAW_BIND:-0.0.0.0}
     # Security: Resource limits
     deploy:
       resources:

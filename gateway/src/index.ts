@@ -179,7 +179,7 @@ class AuthorClawGateway {
     this.app = express();
     this.server = createServer(this.app);
     this.io = new SocketIO(this.server, {
-      cors: { origin: ['http://localhost:3847', 'http://127.0.0.1:3847'] },
+      cors: { origin: '*' },
     });
 
     // Security middleware
@@ -189,11 +189,12 @@ class AuthorClawGateway {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          connectSrc: ["'self'", "http://localhost:3847", "http://127.0.0.1:3847"],
+          connectSrc: ["'self'", "*"],
+          upgradeInsecureRequests: null,
         },
       },
     }));
-    this.app.use(cors({ origin: ['http://localhost:3847', 'http://127.0.0.1:3847'] }));
+    this.app.use(cors({ origin: '*' }));
     this.app.use(express.json({ limit: '5mb' }));
   }
 
@@ -926,14 +927,6 @@ class AuthorClawGateway {
 
   private setupWebSocket(): void {
     this.io.on('connection', (socket) => {
-      const origin = socket.handshake.headers.origin;
-      const allowed = ['http://localhost:3847', 'http://127.0.0.1:3847'];
-      if (origin && !allowed.includes(origin)) {
-        this.audit.log('security', 'websocket_rejected', { origin });
-        socket.disconnect();
-        return;
-      }
-
       this.audit.log('connection', 'websocket_connected', { id: socket.id });
 
       socket.on('message', async (data: { content: string }) => {
@@ -2613,8 +2606,9 @@ class AuthorClawGateway {
   async start(): Promise<void> {
     await this.initialize();
     const port = this.config.get('server.port', 3847);
-    this.server.listen(port, '127.0.0.1', () => {
-      // Bound to localhost only for security
+    this.server.listen(port, process.env.AUTHORCLAW_BIND || '0.0.0.0', () => {
+      // Bind address: AUTHORCLAW_BIND env var, defaults to 0.0.0.0 (all interfaces).
+      // Set AUTHORCLAW_BIND=127.0.0.1 to restore localhost-only behavior.
     });
   }
 
