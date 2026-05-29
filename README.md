@@ -78,7 +78,7 @@ npx tsx gateway/src/index.ts
 > **First run?** AuthorClaw auto-generates a vault encryption key and saves it to `.env`.
 > Your API keys will persist across restarts. For a guided setup, run `bash scripts/setup-wizard.sh`.
 
-See [QUICKSTART.md](QUICKSTART.md) for the full setup guide.
+See [docs/QUICKSTART.md](docs/QUICKSTART.md) for the full setup guide, or [docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md) for a step-by-step walkthrough of writing your first novel.
 
 ---
 
@@ -439,6 +439,25 @@ bash scripts/setup-wizard.sh
 ```
 
 It walks you through everything: OS detection, Node.js installation, Ollama setup, API key configuration, vault passphrase creation, and personalization (genre, word goals). It even generates a troubleshooting prompt you can paste into any AI chatbot if you get stuck.
+
+---
+
+## Documentation
+
+All supporting guides live in [`docs/`](docs/). Start with whichever matches what you need to do:
+
+### 📘 Getting started
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — Install AuthorClaw and run your first task in under 5 minutes.
+- **[docs/FIRST-NOVEL-GUIDE.md](docs/FIRST-NOVEL-GUIDE.md)** ✨ *new* — Step-by-step walkthrough from "I have an idea" to chapter files on disk. The how-to-use guide for the full novel pipeline (persona → planning → bible → production → revision → format → launch).
+
+### 🛠 Operations
+- **[docs/LAUNCH-GUIDE.md](docs/LAUNCH-GUIDE.md)** — Start, stop, monitor, and manage AuthorClaw across local, Docker, and VPS deployments. Ports, environment variables, common API calls.
+- **[docs/SECURITY.md](docs/SECURITY.md)** — Vault, sandbox, audit log, network posture, deployment guidance for trusted LAN vs untrusted exposure.
+
+### 🗺 Roadmap & planning
+- **[docs/OPENCLAW-UPDATES.md](docs/OPENCLAW-UPDATES.md)** ✨ *new* — Audit of OpenClaw upstream features (releases 2026.5.26 → 2026.5.27) that would benefit AuthorClaw, ranked by author-workflow value across 4 tiers, with a suggested sprint order.
+- **[docs/TODO.md](docs/TODO.md)** — Tracked work items: security review, quick cleanups, larger refactors, and standing constraints not to "fix."
+- **[docs/RENAME-PLAN.md](docs/RENAME-PLAN.md)** — Runbook for the AuthorClaw → BookClaw rename. Decisions captured; not yet executed.
 
 ---
 
